@@ -1,0 +1,3 @@
+[submodule "3ds/su"]
+	path = 3ds/su
+	url = https://github.com/delebile/SuperUserLib3DS.git
