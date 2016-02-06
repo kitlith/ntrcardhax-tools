@@ -1,3 +1,6 @@
 [submodule "3ds/su"]
 	path = 3ds/su
 	url = https://github.com/delebile/SuperUserLib3DS.git
+[submodule "3ds/Brahma2"]
+	path = 3ds/Brahma2
+	url = https://github.com/delebile/Brahma2.git

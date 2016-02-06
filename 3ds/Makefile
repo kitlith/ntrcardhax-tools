@@ -11,9 +11,9 @@ include $(DEVKITARM)/3ds_rules
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	src su
+SOURCES		:=	src su Brahma2
 #DATA		:=	data
-#INCLUDES	:=	include
+INCLUDES	:=	Brahma2/include
 NO_SMDH		:= 	1
 #ROMFS		:=	romfs
 

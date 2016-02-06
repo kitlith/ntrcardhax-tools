@@ -1,8 +1,9 @@
 #include <3ds.h>
 #include <stdio.h>
 #include "../su/libsu.h"
+#include <brahma.h>
 
-#warning "This is a concept only! I probably did this wrong!"
+#warning "This is a concept only! Everything is wrong!"
 
 #define REG_NTRCARDROMCNT (*(vu32*)0x10164004)
 
@@ -10,7 +11,7 @@ bool exit(void) {
     hidScanInput();
     gfxFlushBuffers();
     gfxSwapBuffers();
-    
+
     if(hidKeysDown() & KEY_START) return true;
     return false;
 }
@@ -18,6 +19,27 @@ bool exit(void) {
 void cleanup(void) {
     gfxExit();
         // sdmcExit();
+}
+
+s32 overflow_buffer(void) {
+    REG_NTRCARDROMCNT = 0x883F1FFF | (6 << 24); // TODO: Less magic?
+    return 0;
+}
+
+s32 priv_brahma_stuff(void) {
+    __asm__ volatile ("cpsid aif"); // Copied from Brahma2
+    u32 *save = (u32 *)(g_expdata.va_fcram_base + 0x3FFFE00);
+    save[0] = topFramebufferInfo.framebuf0_vaddr;
+   	save[1] = topFramebufferInfo.framebuf1_vaddr;
+	save[2] = bottomFramebufferInfo.framebuf0_vaddr;
+
+    // Working around a GCC bug to translate the va address to pa...
+	save[0] += 0xC000000;  // (pa FCRAM address - va FCRAM address)
+	save[1] += 0xC000000;
+	save[2] += 0xC000000;
+
+    map_arm9_payload();
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -31,6 +53,14 @@ int main(int argc, char **argv) {
         cleanup();
         return -1;
     }
+
+    bool error = false;
+    printf("Setting up payload area...");
+    brahma_init();
+    load_arm9_payload_offset("/payload.bin", 0, 0);
+    setup_exploit_data();
+    svcBackdoor(priv_brahma_stuff);
+
     printf("Insert cartridge now, or press START to exit.\n\n");
     // Wait for ARM9 to begin reading the cartridge...
     while (~REG_NTRCARDROMCNT & (1 << 31)) {
@@ -39,7 +69,8 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
-    REG_NTRCARDROMCNT = 0x883F1FFF | (6 << 24);
+
+    svcBackdoor(overflow_buffer);
     printf("Profit?\nPress START to exit.\n");
     while (aptMainLoop() && !exit()) ;
     cleanup(); return 0;
